@@ -7,7 +7,7 @@ import time
 #Initializing the camera
 camera = PiCamera()
 #setting the resolution of the camera
-camera.resolution = (640,480)
+camera.resolution = (1600,1200)
 rawCapture = PiRGBArray(camera, size=camera.resolution)
 
 #setting the undistort matrices
