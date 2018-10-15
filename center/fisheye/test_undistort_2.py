@@ -20,6 +20,57 @@ D=np.array([[-0.17875854240547795], [0.02726679508811555], [-0.01018812324569315
 dim2 = (640,480)
 dim3 = (640,640)#False
 
+def func(nm):
+    
+    height, width = nm.shape[:2]
+    p=50
+    lx = np.zeros((int((1000//p)+1), 1), dtype = "int32")
+    ly= np.zeros((int((1000//p)+1), 1), dtype = "int32")
+    lx = []
+    ly = []
+    rx = []
+    ry = []
+    a = []
+    #a= np.zeros((int((1000//p)+1), 2), dtype = "int32")
+    #b= np.zeros((int((1000//p)+1), 2), dtype = "int32")
+    for val in range(p, 1000, p):
+        hist = np.sum(nm[1000-val:1000-(val-p),:], axis=0)
+        left_max = np.argmax(hist[:500])
+        right_max = np.argmax(hist[500:]) +500
+
+        y = 1000-(val-p)
+
+        cv2.line(nm,(0,y),(660,y),(255,255,255),1)
+
+        y = 1000-val
+
+        cv2.circle(warpedorg, (left_max,y), 3, (0,0,0), -1)
+        #cv2.rectangle(nm,(left_max-30, y-10),(left_max+30, y+10),(255,255,255),1)
+        if len(lx) != 0:
+            if left_max > (lx[-1] - 20):
+                if left_max < (lx[-1] + 20):
+                    lx.append(left_max)
+                    ly.append(y)
+        elif left_max > 7:
+            lx.append(left_max)
+            ly.append(y)            
+
+        cv2.circle(warpedorg, (right_max, y), 3, (0,0,0), -1)
+        #cv2.rectangle(nm,(right_max-30, y-10),(right_max+30, y+10),(255,255,255),1)
+        rx.append(right_max)
+        ry.append(y)
+        #b[int(val/p)] = [right_max, y]
+    '''
+    plt.plot(lx, ly, 'o')
+    #plt.imshow(nm, cmap="gray")
+    lf = np.polyfit(lx, ly, 2)
+    rf = np.polyfit(rx, ry, 2)
+    plt.plot(lx, np.polyval(lf,lx), 'r-', linewidth = 4.0)
+    plt.plot(rx, np.polyval(rf,rx), 'g-', linewidth = 4.0)
+    print(lx)
+    '''
+    return nm
+
 for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_port = True):
     img = frame.array
     dim1 = img.shape[:2][::-1]
@@ -33,20 +84,35 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     scaled_K = K * dim1[0] / DIM[0]
     scaled_K[2][2] = 1
     
-    new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(scaled_K, D, dim2, np.eye(3), balance=0)
+    new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(scaled_K, D, dim2, np.eye(3), balance=1)
         
     map1, map2 = cv2.fisheye.initUndistortRectifyMap(scaled_K, D, np.eye(3), new_K, dim3, cv2.CV_16SC2)
     
     undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     
     #crop_img = undistorted_img[0:480, 0:640]
-    resized_img = cv2.resize(undistorted_img, (720, 540)) 
-    cv2.imshow("undistorted", resized_img)
+    resized_img = cv2.resize(undistorted_img, (720, 540))
+    
+    orig_pts = np.float32([[340, 244], [387, 244], [96,364],[641,364]])
+    dest_pts = np.float32([[0, 0], [650, 0], [0, 1000], [660, 1000]])
+
+    M = cv2.getPerspectiveTransform(orig_pts, dest_pts)
+    warpedorg = cv2.warpPerspective(resized_img, M, (660,1000))
+    
+    warpedbw= cv2.cvtColor(warpedorg, cv2.COLOR_BGR2GRAY)
+    
+    th = 170
+    warpedbw[warpedbw < th] = 0    # Black
+    warpedbw[warpedbw >= th] = 255 # White
+    
+    func(warpedbw)
+    
+    cv2.imshow("undistorted", warpedorg)
     key = cv2.waitKey(1) & 0xFF
     
     rawCapture.truncate(0)
     if key == ord('q'):
         break
     elif key == ord('c'):
-        cv2.imwrite("undist.jpg", undistorted_img)
+        cv2.imwrite("undist.jpg", warpedorg)
         break
