@@ -23,9 +23,9 @@ dim3 = (880,880)#False
 def func(nm):
     
     height, width = nm.shape[:2]
-    p=50
-    lx = np.zeros((int((1000//p)+1), 1), dtype = "int32")
-    ly= np.zeros((int((1000//p)+1), 1), dtype = "int32")
+    p=20
+    lx = np.zeros((int((height//p)+1), 1), dtype = "int32")
+    ly= np.zeros((int((height//p)+1), 1), dtype = "int32")
     lx = []
     ly = []
     rx = []
@@ -33,32 +33,43 @@ def func(nm):
     a = []
     #a= np.zeros((int((1000//p)+1), 2), dtype = "int32")
     #b= np.zeros((int((1000//p)+1), 2), dtype = "int32")
-    for val in range(p, 1000, p):
-        hist = np.sum(nm[1000-val:1000-(val-p),:], axis=0)
-        left_max = np.argmax(hist[:500])
-        right_max = np.argmax(hist[500:]) +500
+    for val in range(0, height, p):
+        hist = np.sum(nm[height-val:height-(val-p),:], axis=0)
+        left_max = np.argmax(hist[:height//2])
+        right_max = np.argmax(hist[height//2:]) + height//2
 
-        y = 1000-(val-p)
+        y = height-(val-p)
 
-        cv2.line(nm,(0,y),(660,y),(255,255,255),1)
+        cv2.line(nm,(0,y),(width,y),(255,255,255),1)
 
-        y = 1000-val
+        y = height-val
 
-        cv2.circle(warpedorg, (left_max,y), 3, (0,0,0), -1)
-        #cv2.rectangle(nm,(left_max-30, y-10),(left_max+30, y+10),(255,255,255),1)
+        #cv2.circle(warpedorg, (left_max,y), 3, (0,0,0), -1)
+        #cv2.rectangle(warpedorg,(left_max-40, y-10),(left_max+40, y+10),(255,255,255),1)
         if len(lx) != 0:
-            if left_max > (lx[-1] - 20):
-                if left_max < (lx[-1] + 20):
+            if left_max > (lx[-1] - 40):
+                if left_max < (lx[-1] + 40):
+                    #cv2.circle(warpedorg, (left_max,y), 3, (0,0,0), -1)
                     lx.append(left_max)
                     ly.append(y)
         elif left_max > 7:
             lx.append(left_max)
-            ly.append(y)            
-
+            ly.append(y)
+        
+        if len(rx) != 0:
+            if right_max > (rx[-1] - 40):
+                if right_max < (rx[-1] + 40):
+                    cv2.circle(warpedorg, (right_max,y), 3, (0,0,0), -1)
+                    cv2.rectangle(warpedorg,(right_max-40, y-10),(right_max+40, y+10),(255,255,255),1)
+                    rx.append(right_max)
+                    ry.append(y)
+        elif right_max > 0:
+            rx.append(right_max)
+            rx.append(y)  
         cv2.circle(warpedorg, (right_max, y), 3, (0,0,0), -1)
-        #cv2.rectangle(nm,(right_max-30, y-10),(right_max+30, y+10),(255,255,255),1)
-        rx.append(right_max)
-        ry.append(y)
+        #cv2.rectangle(warpedorg,(right_max-40, y-10),(right_max+40, y+10),(255,255,255),1)
+#        rx.append(right_max)
+#        ry.append(y)
         #b[int(val/p)] = [right_max, y]
     '''
     plt.plot(lx, ly, 'o')
@@ -96,7 +107,7 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     cropped_img = resized_img[312:480, 201:830]
     resized_img = cv2.resize(cropped_img, (1200,320))
     
-    orig_pts = np.float32([[489, 66], [682, 66], [30,320],[1175,320]])
+    orig_pts = np.float32([[497, 66], [682, 66], [43,320],[1189,320]])
     dest_pts = np.float32([[0, 0], [600, 0], [0, 600], [600, 600]])
 
     M = cv2.getPerspectiveTransform(orig_pts, dest_pts)
@@ -104,12 +115,12 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     
     warpedbw= cv2.cvtColor(warpedorg, cv2.COLOR_BGR2GRAY)
     
-    th = 170
+    th = 180
     warpedbw[warpedbw < th] = 0    # Black
     warpedbw[warpedbw >= th] = 255 # White
      
-    #func(warpedbw)
-    
+    func(warpedbw)
+    #cv2.imshow("un", warpedbw)
     cv2.imshow("undistorted", warpedorg)
     key = cv2.waitKey(1) & 0xFF
     
