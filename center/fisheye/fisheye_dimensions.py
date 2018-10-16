@@ -18,8 +18,8 @@ i=0
 time.sleep(0.1)
 
 DIM=(1600, 1200)
-K=np.array([[782.4109807267058, 0.0, 824.1440520434368], [0.0, 775.2029561786062, 562.6266212530035], [0.0, 0.0, 1.0]])
-D=np.array([[-0.1828678261677803], [0.025726673526163292], [-0.009997467772548788], [0.002987921053620612]])
+K=np.array([[774.4231548805052, 0.0, 822.6167410427034], [0.0, 769.3288387349592, 565.6990482106042], [0.0, 0.0, 1.0]])
+D=np.array([[-0.17875854240547795], [0.02726679508811555], [-0.010188123245693159], [0.0024264322841337192]])
 
 # capture frames from the camera
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -27,6 +27,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 	h,w = image.shape[:2]
         map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), K, DIM, cv2.CV_16SC2)
         undistorted_img = cv2.remap(image, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+        undistorted_img = cv2.resize(undistorted_img, (720, 540))
         cv2.imshow("undistorted", undistorted_img)
         key = cv2.waitKey(1) & 0xFF
 	'''

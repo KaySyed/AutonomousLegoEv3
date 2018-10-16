@@ -17,8 +17,8 @@ D=np.array([[-0.17818296829734215], [0.004041559932549516], [0.01083544507979581
 K=np.array([[774.4231548805052, 0.0, 822.6167410427034], [0.0, 769.3288387349592, 565.6990482106042], [0.0, 0.0, 1.0]])
 D=np.array([[-0.17875854240547795], [0.02726679508811555], [-0.010188123245693159], [0.0024264322841337192]])
 
-dim2 = (640,480)
-dim3 = (640,640)#False
+dim2 = (880,660)
+dim3 = (880,880)#False
 
 def func(nm):
     
@@ -91,21 +91,24 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     
     #crop_img = undistorted_img[0:480, 0:640]
-    resized_img = cv2.resize(undistorted_img, (720, 540))
+    resized_img = cv2.resize(undistorted_img, (1280, 960))
     
-    orig_pts = np.float32([[340, 244], [387, 244], [96,364],[641,364]])
-    dest_pts = np.float32([[0, 0], [650, 0], [0, 1000], [660, 1000]])
+    cropped_img = resized_img[312:480, 201:830]
+    resized_img = cv2.resize(cropped_img, (1200,320))
+    
+    orig_pts = np.float32([[489, 66], [682, 66], [30,320],[1175,320]])
+    dest_pts = np.float32([[0, 0], [600, 0], [0, 600], [600, 600]])
 
     M = cv2.getPerspectiveTransform(orig_pts, dest_pts)
-    warpedorg = cv2.warpPerspective(resized_img, M, (660,1000))
+    warpedorg = cv2.warpPerspective(resized_img, M, (600,600))
     
     warpedbw= cv2.cvtColor(warpedorg, cv2.COLOR_BGR2GRAY)
     
     th = 170
     warpedbw[warpedbw < th] = 0    # Black
     warpedbw[warpedbw >= th] = 255 # White
-    
-    func(warpedbw)
+     
+    #func(warpedbw)
     
     cv2.imshow("undistorted", warpedorg)
     key = cv2.waitKey(1) & 0xFF
