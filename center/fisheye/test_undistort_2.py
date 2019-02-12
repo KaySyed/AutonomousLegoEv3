@@ -3,6 +3,18 @@ from picamera import PiCamera
 import numpy as np
 import time
 import cv2
+import rpyc
+
+con = rpyc.classic.connect('ev3dev.local')
+ev3 = con.modules['ev3dev2']
+
+#ev3.sound.Sound().speak('I AM ON')
+
+mediumMotor = ev3.motor.MediumMotor('outA');
+mediumMotor.reset()
+print(mediumMotor.position)
+
+previous_diff = 0
 
 camera = PiCamera()
 camera.resolution = (1600,1200)
@@ -20,6 +32,8 @@ D=np.array([[-0.17875854240547795], [0.02726679508811555], [-0.01018812324569315
 dim2 = (880,660)
 dim3 = (880,880)#False
 def func(nm):
+    
+    previous_diff = 0
     i = 0
     height, width = nm.shape[:2]
     p=10
@@ -85,8 +99,53 @@ def func(nm):
                     cv2.circle(warpedorg, (m, ly[i]), 3, (0,0,255), -1)
         '''
     #print(len(ma))
+    sum_lane_center = 0
+    lenma = len(ma) -2
     for r in range (len(ma), 1, -1):
-        cv2.line(warpedorg, ma[r-1], ma[r-2],(0,255,0),2)
+        cv2.line(warpedorg, ma[r-1], ma[r-2],(0,0,255),2)
+        if r < lenma:
+            sum_lane_center = (ma[r-1][0] + sum_lane_center)
+            #print(ma[r-1][0])
+    avg_lane_center = sum_lane_center // lenma
+    diff = 250 - avg_lane_center
+    #print('difference = ' + str(diff))
+    print('----')
+    
+    diff_difference = 0
+
+    diff_difference = previous_diff + diff
+    
+    
+    print ('diff difference ' + str(diff_difference))
+    print ('motor pos  =' + str(mediumMotor.position))
+    
+    if previous_diff == 0:
+        if diff == 250:
+            print('probably instantiation')
+        elif diff > 85:
+            previous_diff = 85
+            print("set position to 1 " + str(diff))
+            #mediumMotor.on_to_position(speed = 10, position = 85, brake = False)
+        elif diff < -60:
+            previous_diff = -60
+            print("set position to 2 " + str(diff))
+            #mediumMotor.on_to_position(speed = 10, position = -85, brake = False)
+        else:
+            previous_diff = diff            
+            val = diff - mediumMotor.position
+            if ((val> 0 and val > 5) or (val < 0 and (val * -1) > 5)):
+                print("set position to 3 " + str(diff * 1.5))
+                print('val = ' + str(val))
+                if ((diff * 1.5) > 60):
+                    diff = 60
+                elif ((diff* 1.5) < -60):
+                    diff = -60
+                else:
+                    diff = diff * 1.5
+                #mediumMotor.on_to_position(speed = 10, position = int(diff) , brake = False)
+    
+    #print( previous_diff)
+        
         #cv2.rectangle(warpedorg,(right_max-40, y-10),(right_max+40, y+10),(255,255,255),1)
 #        rx.append(right_max)
 #        ry.append(y)
@@ -103,6 +162,7 @@ def func(nm):
     return nm
 
 for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_port = True):
+    previous_diff = 0
     img = frame.array
     dim1 = img.shape[:2][::-1]
     assert dim1[0]/dim1[1] == DIM[0]/DIM[1], "Image to undistort needs to have same aspect ratio as the ones used in calibration"
@@ -135,7 +195,7 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     
     warpedbw= cv2.cvtColor(warpedorg, cv2.COLOR_BGR2GRAY)
     
-    th = 180
+    th = 120
     warpedbw[warpedbw < th] = 0    # Black
     warpedbw[warpedbw >= th] = 255 # White
      
