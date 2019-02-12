@@ -102,7 +102,7 @@ Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi an
 - Open a terminal and enter
 	`python3`
 - This should get you into the python terminal which shows `>>>` followed by a blinking cursor
-- Enter the following change the `A` in `outA` below to the port you connected your motor to
+- Enter the following, changing the `A` in `outA` below to the port you connected your motor to
 	```
     import rpyc
 	con = rpyc.classic.connect('ev3dev.local')
