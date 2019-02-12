@@ -96,7 +96,7 @@ Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi an
 ### Lets move some motors
 - Verify that the medium motor is connected to one of the motor ports and not some sensor port
 - Verify that the ev3 and raspberrypi are connected through usb
-- Verify that the rpyc server is started on the ev3 ssh terminal should show
+- Verify that the rpyc server is started on the ev3 and the ssh terminal shows
  `"INFO:SLAVE/****:server started on ***:***"`
 ##### On the RaspberryPi
 - Open a terminal and enter
