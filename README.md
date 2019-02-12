@@ -15,7 +15,7 @@ Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi an
  - Download the latest version of Raspbian.
  - Google Etcher, Download, Install and follow the   [tutorial](https://www.raspberrypi.org/documentation/installation/installing-images/) to flash your SD card with Raspbian.
  - Install pip by using **JUST** the pip part  [here](https://www.raspberrypi.org/documentation/linux/software/python.md).
-- Install pip3 by following https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/
+- Install pip3 by following [this](https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/)
 	- Make sure you verify the pip3 version
 - Close all terminals
 
