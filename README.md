@@ -1,6 +1,10 @@
 # AutonomousLegoEv3
 
 This repository contains my attempts at buliding a self driving car using a RaspberryPi, Python and a LEGO EV3 Mindstorms educational unit
+
+## License
+This repo and all its contents are licensed under Apache License 2.0. Copyright and License notices must be preserved
+
 ## Getting Started 
 Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi and Python.
 ##### Good to know
