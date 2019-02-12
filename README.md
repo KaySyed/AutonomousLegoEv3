@@ -9,8 +9,8 @@ This repository and all its contents are licensed under Apache License 2.0. Copy
 Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi and Python.
 ##### Good to know
 
-  - Tutorial written by Syed Waqee Wali.
-  - Shortcut to open a terminal on RaspberryPi: 
+  - Tutorial written by Syed Waqee Wali
+  - Shortcut to open a terminal on Raspbian: 
         ```
              Ctrl + Alt + T
         ```
