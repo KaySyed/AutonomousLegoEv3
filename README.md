@@ -80,7 +80,7 @@ Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi an
     INFO:SLAVE/****:server started on ***:*** ``
     ```
 - For subsequent connections to ev3
-- ssh into the ev3 and enter
+	- ssh into the ev3 and enter
 				`./rpyc_server.sh`
 - This should show you the `'server started on ***'` as above
 
