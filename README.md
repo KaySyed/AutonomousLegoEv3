@@ -130,4 +130,4 @@ Following is a tutorial on getting started with LEGO EV3, EV3Dev, RaspberryPi an
     - `position` is an absolute position value on the motor. If set to `15`, and then `-15`, the current `mediumMotor.position` will not be `0`. it will be `-15`. i.e. it will have travelled `30` motor degrees towards right (`15` to `0` and then `0` to -`15`)
 - Don't exceed the position on the steering motor by +/-65 (my ugly experience makes me say this)
 
-### There you go, now, you can call yourself a Robotist :p
+### There you go, now, you can call yourself a Robotist :stuck_out_tongue_winking_eye:
