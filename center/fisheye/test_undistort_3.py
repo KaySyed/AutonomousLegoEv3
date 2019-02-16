@@ -7,22 +7,37 @@ import rpyc
 from time import sleep
 import math
 
-con = rpyc.classic.connect('ev3dev.local')
-motors = con.modules['ev3dev2.motor']
-sensors = con.modules['ev3dev2.sensor.lego']
+#con = rpyc.classic.connect('ev3dev.local')
+#motors = con.modules['ev3dev2.motor']
+#sensors = con.modules['ev3dev2.sensor.lego']
 
 #ev3.sound.Sound().speak('I AM ON')
 
-mediumMotor = motors.MediumMotor('outA')
+#mediumMotor = motors.MediumMotor('outA')
 
 #us = sensors.UltrasonicSensor()
 #ts = sensors.TouchSensor()
 
-mediumMotor.reset()
+#mediumMotor.reset()
+
+# Instantiate OCV kalman filter
+class KalmanFilter:
+
+    kf = cv2.KalmanFilter(4, 2)
+    kf.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32)
+    kf.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32)
+
+    def Estimate(self, coordX, coordY):
+        ''' This function estimates the position of the object'''
+        measured = np.array([[np.float32(coordX)], [np.float32(coordY)]])
+        self.kf.correct(measured)
+        predicted = self.kf.predict()
+        return predicted
+
 
 camera = PiCamera()
 camera.resolution = (1600,1200)
-camera.framerate = 10
+camera.framerate = 8
 rawCapture = PiRGBArray(camera, size = camera.resolution)
 
 #setting the undistort matrices
@@ -46,12 +61,13 @@ def stop():
     lm2.stop(stop_action="hold")
     sleep(2)
 
+
 def func(nm):    
     previous_diff = 0
+    totm = 0
     i = 0
     height, width = nm.shape[:2]
-    p=8
-
+    p=10
     lx = []
     ly = []
     rx = []
@@ -60,17 +76,29 @@ def func(nm):
     my = []
     #a= np.zeros((int((1000//p)+1), 2), dtype = "int32")
     #b= np.zeros((int((1000//p)+1), 2), dtype = "int32")
+    added = 0
+    roiy = 350
+    
+    kfObj = KalmanFilter()
+    predictedCoords = np.zeros((2, 1), np.float32)
+
     for val in range(0, height, p):
         hist = np.sum(nm[height-val:height-(val-p),:], axis=0)
         left_max = np.argmax(hist[:height//2])
         right_max = np.argmax(hist[height//2:]) + height//2
-
         y = height-(val-p)
+        cv2.line(warpedorg, (0, roiy), (width,roiy), (0,255,255), 1)
+        if y < roiy:
+            continue
+        #cv2.line(nm,(0,y),(width,y),(255,255,255),1)
 
         y = height-val
+        avgm = 0
 
         #cv2.circle(warpedorg, (left_max,y), 3, (0,0,0), -1)
         #cv2.rectangle(warpedorg,(left_max-60, y-10),(left_max+60, y+10),(255,255,255),1)
+        writeL = False
+        writeR = False
         boxth = 70
         if len(lx) != 0:
             if left_max > (lx[-1] - boxth):
@@ -79,60 +107,74 @@ def func(nm):
                     #cv2.rectangle(warpedorg,(left_max-60, y-10),(left_max+60, y+10),(255,255,255),1)
                     lx.append(left_max)
                     ly.append(y)
+                    writeL =True
         elif left_max > 7:
             lx.append(left_max)
             ly.append(y)
-        if len(rx) != 0:
+            writeL =True
+            
+            
+        if len(rx) != 0 and right_max > 310:
             if right_max > (rx[-1] - boxth):
                 if right_max < (rx[-1] + boxth):
                     cv2.circle(warpedorg, (right_max,y), 3, (0,0,0), -1)
                     #cv2.rectangle(warpedorg,(right_max-60, y-10),(right_max+60, y+10),(255,255,255),1)
                     rx.append(right_max)
                     ry.append(y)
+                    writeR =True
                 elif len(rx) == 1:
                     rx.append(right_max)
                     ry.append(y)
+                    writeR =True
             elif len(rx) == 1:
                 rx.append(right_max)
                 ry.append(y)
-        elif right_max > 0:
+                writeR =True
+        elif right_max > 0 and right_max > 310:
             rx.append(right_max)
-            ry.append(y)  
-
-    #print(len(rx))
-    for i in range (0, len(lx), 1):
-        for j in range (0,len(rx), 1):
-            if ly[i] == ry[j] and ly[i] > 350:                                
-                m = ((rx[i] - lx[i]) //2) + lx[i] +5
-                ma.append((m, ly[i]))
-                my.append(ly[i])
-                cv2.circle(warpedorg, (m, ly[i]), 3, (0,0,255), -1)
-                '''
-                if m >= 300-10 or m <=300+10:
-                    cv2.circle(warpedorg, (m,ly[i]), 3, (0,255,255), -1)
-                else:
-                    cv2.circle(warpedorg, (m, ly[i]), 3, (0,0,255), -1)
-        '''
+            ry.append(y)
+            writeR =True
+        
+        #if len(ma) > 0:
+         #   avgm = (totm//len(ma))
+        if writeL and writeR and y > roiy:
+            m = ((right_max - left_max) //2) + left_max
+            ma.append((m, y))
+            cv2.circle(warpedorg, (m, y), 3, (0,0,255), -1)
+            totm = (totm + m)
+            predictedCoords = kfObj.Estimate(m, y)
+            #avgm = totm//len(ma)
+            #print(avgm)
+        elif y > roiy and int(predictedCoords[0]) > 0 :
+            #predictedCoords = kfObj.Estimate(0, y)
+            predictedCoords = kfObj.Estimate(int(predictedCoords[0]), y)
+            cv2.circle(warpedorg, (predictedCoords[0], y), 3, (0,0,255), -1)
+            totm = int(totm + predictedCoords[0])
+            ma.append((predictedCoords[0], y))
+            #if len(ma) > 0 and y > roiy and added > 3:
+                #ma.append((ma[len(ma)-1][0],y))
+                #avgm = ma[len(ma)-1][0] #int(((totm // len(ma))) + (ma[len(ma)-1][0]))# * 0.5) - ma[len(ma)-1][0])
+                #ma.append((avgm, y))
+                #totm = ma[len(ma)-1][0] +totm
+                #cv2.circle(warpedorg, (int(avgm), y), 3, (255,0,255), -1)
+        if len(ma) > 1:
+            cv2.line(warpedorg, ma[len(ma)-1], ma[len(ma)-2],(0,0,255),2)
     #print(len(ma))
-    sum_lane_center = 0
-    lenma = len(ma) - 2
+    #sum_lane_center = 0
+    #len(ma) = len(ma) - 2
     
-    #math.atan2(targetY-gunY, targetX-gunX)
-    
-    if lenma > 0:
-        cv2.circle(warpedorg, (ma[1]), 3, (255,0,0), -1)
-        cv2.circle(warpedorg, (ma[len(ma)-1]), 3, (255,0,0), -1)
+    if len(ma) > 0:        
         tan = math.degrees((math.atan2(ma[1][1]-ma[len(ma)-1][1], ma[1][0]-ma[len(ma)-1][0])))
         tan = (90-tan)
         print('tan = ' + str(tan))
-        for r in range (len(ma), 1, -1):
-            cv2.line(warpedorg, ma[r-1], ma[r-2],(0,0,255),2)
-            if r < lenma:
-                sum_lane_center = (ma[r-1][0] + sum_lane_center)
+        #for r in range (len(ma), 1, -1):
+        #    cv2.line(warpedorg, ma[r-1], ma[r-2],(0,0,255),2)
+        #    if r < len(ma):
+        #        sum_lane_center = (ma[r-1][0] + sum_lane_center)
                 #print(ma[r-1][0])
-        avg_lane_center = sum_lane_center // lenma
-        diff = 250 - avg_lane_center
-        #print('difference = ' + str(diff))
+        avg_lane_center = totm // len(ma)
+        diff = 300 - avg_lane_center
+        print('difference = ' + str(diff))
         diff = int(diff *0.7)
         #print('difference scaled = ' + str(diff))
         if diff > 0 and diff > 70:
@@ -143,13 +185,13 @@ def func(nm):
         diff = diff + tan
         print('adjusted after tangent calculated = ' + str(diff) )
         #print('reached here')
-        if abs(diff - mediumMotor.position) > 10:
+        #if abs(diff - mediumMotor.position) > 8:
             #print('position is ' + str(mediumMotor.position) + '. set steering to ' + str(diff)+ '. difference is ' + str(abs(diff - mediumMotor.position)) + '. average is ' + str(avg_lane_center) + ' - needs motor moving')
-            print('abs ' + str(abs(diff - mediumMotor.position)))
+            #print('abs ' + str(abs(diff - mediumMotor.position)))
             #print('setting motor pos')
             #mediumMotor.stop()
-            mediumMotor.on_to_position(speed = 8, position = int(diff) , brake = False)
-            mediumMotor.stop()
+            #mediumMotor.on_to_position(speed = 8, position = int(diff) , brake = False)
+            #mediumMotor.stop()
         
         print('----')
         
@@ -160,8 +202,8 @@ def func(nm):
         
         #print ('diff difference ' + str(diff_difference))
         #print ('motor pos  =' + str(mediumMotor.position))
-        
-    '''
+
+        '''
         if previous_diff == 0:
             if diff == 250:
                 print('initial 250')                
@@ -254,7 +296,7 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     warpedbw= cv2.cvtColor(warpedorg, cv2.COLOR_BGR2GRAY)
     
     th = 180
-    #th = 80
+    th = 80
     warpedbw[warpedbw < th] = 0    # Black
     warpedbw[warpedbw >= th] = 255 # White
     
@@ -270,7 +312,7 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
     
     rawCapture.truncate(0)
     if key == ord('q'):
-        mediumMotor.stop()
+        m#ediumMotor.stop()
         break
     elif key == ord('c'):
         cv2.imwrite("undist.jpg", warpedorg)
