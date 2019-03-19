@@ -16,7 +16,7 @@ m2 = ev3.LargeMotor("outD")
 
 def run():
     m.run_forever(speed_sp=350)
-    m2.run_forever(speed_sp=350)
+    m2.run_forever(speed_sp=-350)
     sleep(1)
 
 def stop():
