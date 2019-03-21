@@ -250,20 +250,20 @@ for frame in camera.capture_continuous(rawCapture, format = "bgr", use_video_por
                 stop()
                 stopped = 1
                 iteration = iteration + 1
-                if iteration > 3:
-                        pygame.mixer.music.load('obstacle.mp3')
+                if iteration == 4:
+                        pygame.mixer.music.load('why.mp3')
                         pygame.mixer.music.play()
                         while pygame.mixer.music.get_busy() == True:
                             continue
                         #print('speak last')#time.sleep(2)
                         #s.speak('OBSTACLE NOT REMOVED. STOPPING REAR MOTORS NOW', play_type = Sound.Sound.PLAY_WAIT_FOR_COMPLETE)
                         #exit()
-                else:
+                if iteration < 3:
                         pygame.mixer.music.load('obstacle.mp3')
                         pygame.mixer.music.play()
                         while pygame.mixer.music.get_busy() == True:
                             continue
-                        print('speak')#s.speak('OBSTACLE DETECTED. ' + str(iteration), play_type = Sound.PLAY_WAIT_FOR_COMPLETE)
+                        #print('speak')#s.speak('OBSTACLE DETECTED. ' + str(iteration), play_type = Sound.PLAY_WAIT_FOR_COMPLETE)
         elif stopped == 1 and us.distance_centimeters > 30.0:
                 #run()
                 print('running')
